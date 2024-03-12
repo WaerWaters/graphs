@@ -28,8 +28,6 @@ def graph_data(place_name, display=False, intersection_focus=False, focus_ignore
         # Convert to GeoDataFrame
         gdf_nodes, gdf_edges = ox.graph_to_gdfs(G)
         
-        return_data[f'{place_name}'] = {'graph': G, 'gdf_nodes': gdf_nodes, 'gdf_edges': gdf_edges}
-        
         # Get area of place
         nodes_proj = ox.graph_to_gdfs(G_projected, edges=False)
         graph_area_m = nodes_proj.unary_union.convex_hull.area
@@ -45,13 +43,15 @@ def graph_data(place_name, display=False, intersection_focus=False, focus_ignore
         # Calculating basic stats
         basic_stats = ox.stats.basic_stats(G_projected)
         
+        if basic_stats_toggle:
+            return_data[f'{place_name}'] = {'graph': G, 'basic_stats': basic_stats, 'gdf_nodes': gdf_nodes, 'gdf_edges': gdf_edges}
+        else:
+            return_data[f'{place_name}'] = {'graph': G, 'gdf_nodes': gdf_nodes, 'gdf_edges': gdf_edges}
+            
         # Identifying intersections (nodes with adjusted degree > 2)
         node_degrees = dict(G_projected.degree())
         
         storage = {}
-        if basic_stats_toggle == True:
-            print(basic_stats)
-        
         # Depend on wether or not to focus on intersections
         if intersection_focus == True:
             intersection_nodes = [node for node, degree in node_degrees.items() if degree >= intersection_edges_quanity*2]  # Degree > 4 in bidirectional graph
@@ -230,9 +230,14 @@ def graph_data(place_name, display=False, intersection_focus=False, focus_ignore
     return return_data
     
 
-places = [['San Francisco, California, USA', 'Oakland, California, USA', 'Piedmont, California, USA'], 'Battle Mountain, Nevada, USA', 'Piedmont, California, USA', 'Bonanza, Colorado', 'Las Vegas, Nevada']
 
-# place_name, display, intersection_focus, focus_ignore_edges, intersection_edges_quanity, maxspeed_fallback, basic_stats_toggle, interactive_map, simple
-print(graph_data(place_name=places, display=False, intersection_focus=True, focus_ignore_edges=False, intersection_edges_quanity=3, maxspeed_fallback=30, basic_stats_toggle=False, interactive_map=False, simple=True, centrality=False, save_data=False, save_data_format='gpkg'))
 
-# sample_points
+
+
+
+
+
+places = [['San Francisco, California, USA', 'Oakland, California, USA', 'Piedmont, California, USA'], 'Battle Mountain, Nevada, USA', 'Piedmont, California, USA', 'Bonanza, Colorado']
+
+print(graph_data(place_name=places, display=False, intersection_focus=True, focus_ignore_edges=False, intersection_edges_quanity=3, maxspeed_fallback=30, basic_stats_toggle=True, interactive_map=False, simple=True, centrality=False, save_data=False, save_data_format='gpkg'))
+
