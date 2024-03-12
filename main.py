@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import pickle
 
 def graph_data(place_name, display=False, intersection_focus=False, focus_ignore_edges=False, intersection_edges_quanity=3, maxspeed_fallback=25, basic_stats_toggle=True, interactive_map=False, simple=True, centrality=False, save_data=False, save_data_format='gpkg'):
-
+    
     if save_data:
         if save_data_format == 'dict':
             save_storage = {}
@@ -222,6 +222,9 @@ def graph_data(place_name, display=False, intersection_focus=False, focus_ignore
         map_filename = 'map.html'
         m.save(map_filename)
         webbrowser.open(map_filename, new=2)
+    
+    return G
+    
 
 places = [['San Francisco, California, USA', 'Oakland, California, USA', 'Piedmont, California, USA'], 'Battle Mountain, Nevada, USA', 'Piedmont, California, USA', 'Bonanza, Colorado', 'Las Vegas, Nevada']
 
