@@ -7,6 +7,8 @@ import pickle
 
 def graph_data(place_name, display=False, intersection_focus=False, focus_ignore_edges=False, intersection_edges_quanity=3, maxspeed_fallback=25, basic_stats_toggle=True, interactive_map=False, simple=True, centrality=False, save_data=False, save_data_format='gpkg'):
     
+    return_data = {}
+    
     if save_data:
         if save_data_format == 'dict':
             save_storage = {}
@@ -25,6 +27,8 @@ def graph_data(place_name, display=False, intersection_focus=False, focus_ignore
         
         # Convert to GeoDataFrame
         gdf_nodes, gdf_edges = ox.graph_to_gdfs(G)
+        
+        return_data[f'{place_name}'] = {'graph': G, 'gdf_nodes': gdf_nodes, 'gdf_edges': gdf_edges}
         
         # Get area of place
         nodes_proj = ox.graph_to_gdfs(G_projected, edges=False)
@@ -223,12 +227,12 @@ def graph_data(place_name, display=False, intersection_focus=False, focus_ignore
         m.save(map_filename)
         webbrowser.open(map_filename, new=2)
     
-    return G
+    return return_data
     
 
 places = [['San Francisco, California, USA', 'Oakland, California, USA', 'Piedmont, California, USA'], 'Battle Mountain, Nevada, USA', 'Piedmont, California, USA', 'Bonanza, Colorado', 'Las Vegas, Nevada']
 
 # place_name, display, intersection_focus, focus_ignore_edges, intersection_edges_quanity, maxspeed_fallback, basic_stats_toggle, interactive_map, simple
-graph_data(place_name=places, display=False, intersection_focus=True, focus_ignore_edges=False, intersection_edges_quanity=3, maxspeed_fallback=30, basic_stats_toggle=False, interactive_map=False, simple=True, centrality=False, save_data=True, save_data_format='gpkg')
+print(graph_data(place_name=places, display=False, intersection_focus=True, focus_ignore_edges=False, intersection_edges_quanity=3, maxspeed_fallback=30, basic_stats_toggle=False, interactive_map=False, simple=True, centrality=False, save_data=False, save_data_format='gpkg'))
 
 # sample_points
