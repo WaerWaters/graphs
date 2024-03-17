@@ -1,11 +1,12 @@
-import osmnx as ox
-import folium
 import webbrowser
+import pickle
+import osmnx as ox
+import folium   
 import networkx as nx
 import matplotlib.pyplot as plt
-import pickle
 
-def graph_data(place_name, display=False, intersection_focus=False, focus_ignore_edges=False, intersection_edges_quanity=3, maxspeed_fallback=25, basic_stats_toggle=True, interactive_map=False, simple=True, centrality=False, save_data=False, save_data_format='gpkg'):
+
+def graph_data(place_name, display=False, intersection_focus=False, focus_ignore_edges=False, intersection_edges_quanity=3, maxspeed_fallback=25, basic_stats_toggle=True, interactive_map=False, simple=True, centrality=False, save_data=True, save_data_format='gpkg'):
     
     return_data = {}
     
@@ -237,7 +238,7 @@ def graph_data(place_name, display=False, intersection_focus=False, focus_ignore
 
 
 
-places = [['San Francisco, California, USA', 'Oakland, California, USA', 'Piedmont, California, USA'], 'Battle Mountain, Nevada, USA', 'Piedmont, California, USA', 'Bonanza, Colorado']
+places = [['San Francisco, California, USA']]
 
-print(graph_data(place_name=places, display=False, intersection_focus=True, focus_ignore_edges=False, intersection_edges_quanity=3, maxspeed_fallback=30, basic_stats_toggle=True, interactive_map=False, simple=True, centrality=False, save_data=False, save_data_format='gpkg'))
+graph_data(place_name=places, display=False, intersection_focus=True, focus_ignore_edges=False, intersection_edges_quanity=3, maxspeed_fallback=30, basic_stats_toggle=True, interactive_map=False, simple=True, centrality=False, save_data=True, save_data_format='gpkg')
 
