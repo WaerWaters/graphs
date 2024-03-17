@@ -75,8 +75,8 @@ def graph_data(place_names, display=False, intersection_focus=False, focus_ignor
                 storage[f'{node}'] = ([node_data])
                 storage[f'{node}'].append(edges)
         
-        if save_data_format == 'dict':
-            save_storage[f'{place_name}'] = storage
+        
+        save_storage[f'{place_name}'] = storage
         
         if display:
             if interactive_map == False:
