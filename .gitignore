@@ -4,3 +4,4 @@ venv/
 dictdata/
 geomap_things.ipynb
 map.html
+load_data.ipynb
