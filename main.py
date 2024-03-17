@@ -6,13 +6,12 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 
-def graph_data(place_name, display=False, intersection_focus=False, focus_ignore_edges=False, intersection_edges_quanity=3, maxspeed_fallback=25, basic_stats_toggle=True, interactive_map=False, simple=True, centrality=False, save_data=True, save_data_format='gpkg'):
+def graph_data(place_names, display=False, intersection_focus=False, focus_ignore_edges=False, intersection_edges_quanity=3, maxspeed_fallback=25, basic_stats_toggle=True, interactive_map=False, simple=True, centrality=False, save_data=True, save_data_format='gpkg'):
     
     return_data = {}
     
     if save_data:
-        if save_data_format == 'dict':
-            save_storage = {}
+        save_storage = {}
     
     if interactive_map:
         # Initialize a storage for later adjusting the map view to fit all places
@@ -21,7 +20,7 @@ def graph_data(place_name, display=False, intersection_focus=False, focus_ignore
         # Initialize an empty folium map, will be set after the first place is processed
         m = None
     
-    for place_name in place_name:
+    for place_name in place_names:
         network_type = "drive"
         G = ox.graph_from_place(place_name, network_type=network_type, simplify=simple)
         G_projected = ox.project_graph(G)
@@ -212,9 +211,8 @@ def graph_data(place_name, display=False, intersection_focus=False, focus_ignore
                 ox.save_graphml(G, filepath=f'./data/network{place_name}.graphml')
     
     if save_data:
-        if save_data_format == 'dict':
-            with open(f'./dictData/{place_name}.pickle', 'wb') as handle:
-                pickle.dump(save_storage, handle)
+        with open(f'./dictData/{place_name}.pickle', 'wb') as handle:
+            pickle.dump(return_data, handle)
     
     if interactive_map and m is not None:
         # Adjust the map to fit all places
@@ -231,14 +229,7 @@ def graph_data(place_name, display=False, intersection_focus=False, focus_ignore
     return return_data
     
 
-
-
-
-
-
-
-
 places = [['San Francisco, California, USA']]
 
-graph_data(place_name=places, display=False, intersection_focus=True, focus_ignore_edges=False, intersection_edges_quanity=3, maxspeed_fallback=30, basic_stats_toggle=True, interactive_map=False, simple=True, centrality=False, save_data=True, save_data_format='gpkg')
+graph_data(place_names=places, display=False, intersection_focus=True, focus_ignore_edges=False, intersection_edges_quanity=3, maxspeed_fallback=30, basic_stats_toggle=True, interactive_map=False, simple=True, centrality=False, save_data=True, save_data_format='gpkg')
 
