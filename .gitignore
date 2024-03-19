@@ -5,3 +5,7 @@ dictdata/
 geomap_things.ipynb
 map.html
 load_data.ipynb
+analysis/
+map/
+analysis_data/
+Maps/

@@ -22,7 +22,13 @@ def graph_data(place_names, display=False, intersection_focus=False, focus_ignor
     
     for place_name in place_names:
         network_type = "drive"
-        G = ox.graph_from_place(place_name, network_type=network_type, simplify=simple)
+        
+        try:
+            G = ox.graph_from_place(place_name, network_type=network_type, simplify=simple)
+        except ValueError as e:
+            print(f"Skipped {place_name}: {e}")
+            continue
+        
         G_projected = ox.project_graph(G)
         
         # Convert to GeoDataFrame
@@ -66,7 +72,12 @@ def graph_data(place_names, display=False, intersection_focus=False, focus_ignor
                 storage[f'{node}'].append(edges)
         else:
             # Extracting and printing information about intersections
-            for node in node_degrees:
+            for node in node_degrees:           
+                intersection_node = False
+                degree = node_degrees[node] 
+                if degree >= intersection_edges_quanity*2:
+                    intersection_node = True
+                
                 node_data = G_projected.nodes[node]
                 
                 # Find edges connected to this intersection node
@@ -74,7 +85,7 @@ def graph_data(place_names, display=False, intersection_focus=False, focus_ignor
                 
                 storage[f'{node}'] = ([node_data])
                 storage[f'{node}'].append(edges)
-        
+                storage[f'{node}'][0]['intersection_node'] = intersection_node
         
         save_storage[f'{place_name}'] = storage
         
@@ -229,7 +240,8 @@ def graph_data(place_names, display=False, intersection_focus=False, focus_ignor
     return return_data
     
 
-places = [['San Francisco, California, USA']]
+    
 
-graph_data(place_names=places, display=False, intersection_focus=True, focus_ignore_edges=False, intersection_edges_quanity=3, maxspeed_fallback=30, basic_stats_toggle=True, interactive_map=False, simple=True, centrality=False, save_data=True, save_data_format='gpkg')
+places = [['Los Angeles , California, USA']]
 
+graph_data(place_names=places, display=False, intersection_focus=False, focus_ignore_edges=False, intersection_edges_quanity=3, maxspeed_fallback=30, basic_stats_toggle=True, interactive_map=False, simple=True, centrality=False, save_data=True, save_data_format='gpkg')
