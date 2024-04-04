@@ -6,7 +6,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 
-def graph_data(place_names, display=False, intersection_focus=False, focus_ignore_edges=False, intersection_edges_quanity=3, maxspeed_fallback=25, basic_stats_toggle=True, interactive_map=False, simple=True, centrality=False, save_data=True, save_data_format='gpkg'):
+def get_graph_data(place_names, display=False, intersection_focus=False, focus_ignore_edges=False, intersection_edges_quanity=3, maxspeed_fallback=25, basic_stats_toggle=True, interactive_map=False, simple=True, centrality=False, save_data=True, save_data_format='gpkg', features=None):
     
     return_data = {}
     
@@ -25,6 +25,8 @@ def graph_data(place_names, display=False, intersection_focus=False, focus_ignor
         
         try:
             G = ox.graph_from_place(place_name, network_type=network_type, simplify=simple)
+            if features is not None:
+                features_data = ox.features_from_place(place_name, features)
         except ValueError as e:
             print(f"Skipped {place_name}: {e}")
             continue
@@ -50,9 +52,15 @@ def graph_data(place_names, display=False, intersection_focus=False, focus_ignor
         basic_stats = ox.stats.basic_stats(G_projected)
         
         if basic_stats_toggle:
-            return_data[f'{place_name}'] = {'graph': G, 'basic_stats': basic_stats, 'gdf_nodes': gdf_nodes, 'gdf_edges': gdf_edges}
+            if features is None:
+                return_data[f'{place_name}'] = {'graph': G, 'basic_stats': basic_stats, 'gdf_nodes': gdf_nodes, 'gdf_edges': gdf_edges}
+            else:
+                return_data[f'{place_name}'] = {'graph': G, 'basic_stats': basic_stats, 'gdf_nodes': gdf_nodes, 'gdf_edges': gdf_edges, 'features': features_data}
         else:
-            return_data[f'{place_name}'] = {'graph': G, 'gdf_nodes': gdf_nodes, 'gdf_edges': gdf_edges}
+            if features is None:
+                return_data[f'{place_name}'] = {'graph': G, 'gdf_nodes': gdf_nodes, 'gdf_edges': gdf_edges}
+            else:
+                return_data[f'{place_name}'] = {'graph': G, 'gdf_nodes': gdf_nodes, 'gdf_edges': gdf_edges, 'features': features_data}
             
         # Identifying intersections (nodes with adjusted degree > 2)
         node_degrees = dict(G_projected.degree())
@@ -87,7 +95,8 @@ def graph_data(place_names, display=False, intersection_focus=False, focus_ignor
                 storage[f'{node}'].append(edges)
                 storage[f'{node}'][0]['intersection_node'] = intersection_node
         
-        save_storage[f'{place_name}'] = storage
+        if save_data:
+            save_storage[f'{place_name}'] = storage
         
         if display:
             if interactive_map == False:
@@ -221,7 +230,7 @@ def graph_data(place_names, display=False, intersection_focus=False, focus_ignor
                 # save street network as GraphML file to work with later in OSMnx or networkx or gephi
                 ox.save_graphml(G, filepath=f'./data/network{place_name}.graphml')
     
-    if save_data:
+    if save_data and save_data_format == 'dict':
         with open(f'./dictData/{place_name}.pickle', 'wb') as handle:
             pickle.dump(return_data, handle)
     
@@ -240,8 +249,7 @@ def graph_data(place_names, display=False, intersection_focus=False, focus_ignor
     return return_data
     
 
-    
+places = ['Los Angeles, California, USA']
 
-places = [['Los Angeles , California, USA']]
+graph_data = get_graph_data(place_names=places, display=False, intersection_focus=False, focus_ignore_edges=False, intersection_edges_quanity=3, maxspeed_fallback=30, basic_stats_toggle=True, interactive_map=False, simple=True, centrality=False, save_data=False, save_data_format='gpkg', features={'amenity': ['kindergarten','school', 'bar', 'fast_food', 'pub', 'college', 'library', 'university', 'courthouse', 'police', 'prison', 'hospital'], 'public_transport': 'stop_position'})
 
-graph_data(place_names=places, display=False, intersection_focus=False, focus_ignore_edges=False, intersection_edges_quanity=3, maxspeed_fallback=30, basic_stats_toggle=True, interactive_map=False, simple=True, centrality=False, save_data=True, save_data_format='gpkg')
