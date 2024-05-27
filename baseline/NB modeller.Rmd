@@ -1,0 +1,237 @@
+---
+title: "NB modeller"
+author: "Nikolai Kaaberbøl"
+date: "2024-05-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Importing libraries
+```{r}
+library(tidyverse)
+library(foreign)
+library(MASS)
+library(AER)
+library(caret)
+library(readr)
+library(splitTools)
+library(pscl)
+```
+
+
+
+Setting the Working directory
+```{r}
+setwd("C:/Users/nikka/Desktop/AAU/4. Semester/Projekt egen/traintest")
+```
+
+
+Importing the data
+```{r}
+base_train <- read.csv("train_set60.csv")
+balanced_train_small <- read.csv("balanced_small_train_set.csv")
+balanced_train_large <- read.csv("balanced_large_train_set.csv")
+
+test <- read_csv("test_set20.csv")
+validation <- read_csv("validate_set20.csv")
+
+datasets <- list(base_train, balanced_train_large, balanced_train_small, test, validation)
+```
+
+Plot NB
+```{r}
+ggplot(base_train, aes(x=TOTAL_ACCIDENTS), x) + geom_bar(colour="black", fill= "lightskyblue1")  + scale_y_log10() + ylab("Log10 of the count") + theme_minimal()
+```
+
+
+Log transforming the AADT vartiables
+```{r}
+
+ln_trans <- function(data){
+  data$lnPRIM_AADT <- log(data$PRIMARY_AADT)
+  data$PRIMARY_AADT <- NULL
+  
+  data$lnSEK_AADT <- log(data$SECONDARY_AADT)
+  data$SECONDARY_AADT <- NULL
+  
+  return(data)
+}
+
+for (i in length(datasets)) {
+  datasets[i] <- ln_trans(datasets[i])
+}
+
+base_train <- ln_trans(base_train)
+balanced_train_large <- ln_trans(balanced_train_large)
+balanced_train_small <- ln_trans(balanced_train_small)
+test <- ln_trans(test)
+validation <- ln_trans(validation)
+
+
+
+```
+
+Dispersion test
+```{r}
+zinb.model <- zeroinfl(TOTAL_ACCIDENTS ~ lnPRIM_AADT + lnSEK_AADT + PRIMARY_SPEED_LIMIT + SECONDARY_SPEED_LIMIT + TRAFFIC_SIGNAL + FOUR_WAY_INTERSECTION + THREE_WAY_INTERSECTION, data = base_train, dist = "negbin")
+
+library(glmmTMB)
+zinb.model <- glmmTMB(TOTAL_ACCIDENTS ~ lnPRIM_AADT + lnSEK_AADT + PRIMARY_SPEED_LIMIT + SECONDARY_SPEED_LIMIT + TRAFFIC_SIGNAL + FOUR_WAY_INTERSECTION + THREE_WAY_INTERSECTION, data = base_train, ziformula = ~1,  family = "nbinom2")
+summary(zinb.model)
+```
+
+
+
+Creating the NB models
+```{r}
+m0 <- glm.nb(TOTAL_ACCIDENTS ~ 1, data = train)
+summary(m0)
+
+m1 <- glm.nb(TOTAL_ACCIDENTS ~ lnPRIM_AADT, data = base_train)
+summary(m1)
+
+m2 <- glm.nb(TOTAL_ACCIDENTS ~ lnPRIM_AADT + lnSEK_AADT, data = base_train)
+summary(m2)
+
+m3 <- glm.nb(TOTAL_ACCIDENTS ~ lnPRIM_AADT + lnSEK_AADT + PRIMARY_SPEED_LIMIT, data = base_train)
+summary(m3)
+
+m4 <- glm.nb(TOTAL_ACCIDENTS ~ lnPRIM_AADT + lnSEK_AADT + PRIMARY_SPEED_LIMIT + SECONDARY_SPEED_LIMIT, data = file)
+summary(m4)
+
+m5 <- glm.nb(TOTAL_ACCIDENTS ~ lnPRIM_AADT + lnSEK_AADT + PRIMARY_SPEED_LIMIT + SECONDARY_SPEED_LIMIT + TRAFFIC_SIGNAL, data = file)
+summary(m5)
+
+m6 <- glm.nb(TOTAL_ACCIDENTS ~ lnPRIM_AADT + lnSEK_AADT + PRIMARY_SPEED_LIMIT + SECONDARY_SPEED_LIMIT + TRAFFIC_SIGNAL + FOUR_WAY_INTERSECTION, data = base_train)
+summary(m6)
+
+m7_base <- glm.nb(TOTAL_ACCIDENTS ~ lnPRIM_AADT + lnSEK_AADT + PRIMARY_SPEED_LIMIT + SECONDARY_SPEED_LIMIT + TRAFFIC_SIGNAL + FOUR_WAY_INTERSECTION + THREE_WAY_INTERSECTION, data = base_train)
+summary(m7_base)
+
+m7_base_2 <- glm(TOTAL_ACCIDENTS ~ lnPRIM_AADT + lnSEK_AADT + PRIMARY_SPEED_LIMIT + SECONDARY_SPEED_LIMIT + TRAFFIC_SIGNAL + FOUR_WAY_INTERSECTION + THREE_WAY_INTERSECTION, data = base_train, family = "gaussian")
+
+
+summary(m7_base_2)
+
+
+m7_small <- glm.nb(TOTAL_ACCIDENTS ~ lnPRIM_AADT + lnSEK_AADT + PRIMARY_SPEED_LIMIT + SECONDARY_SPEED_LIMIT + TRAFFIC_SIGNAL + FOUR_WAY_INTERSECTION + THREE_WAY_INTERSECTION, data = balanced_train_small)
+
+m7_large <- glm.nb(TOTAL_ACCIDENTS ~ lnPRIM_AADT + lnSEK_AADT + PRIMARY_SPEED_LIMIT + SECONDARY_SPEED_LIMIT + TRAFFIC_SIGNAL + FOUR_WAY_INTERSECTION + THREE_WAY_INTERSECTION, data = balanced_train_large)
+
+m7$theta
+
+# Testing for overdispersion
+dispersiontest(m7, trafo=1)
+
+summary(m7)
+
+m8 <- glm.nb(TOTAL_ACCIDENTS ~ lnPRIM_AADT + lnSEK_AADT + PRIMARY_SPEED_LIMIT + SECONDARY_SPEED_LIMIT + TRAFFIC_SIGNAL + THREE_WAY_INTERSECTION, data = file)
+summary(m8)
+
+m9 <- glm.nb(TOTAL_ACCIDENTS ~ lnPRIM_AADT + lnSEK_AADT + TRAFFIC_SIGNAL, data = file)
+summary(m9)
+
+models <- list(m0, m1, m2, m3, m4, m5, m6, m7, m8, m9)
+
+
+
+```
+
+
+k-folds validation
+```{r}
+set.seed(10)
+train_control <- trainControl(method = "repeatedcv", number = 10, repeats = 3, verboseIter = TRUE)
+
+cv_model <- train(TOTAL_ACCIDENTS ~ ., data = train, method = "glm.nb", trControl=train_control)
+cv_model$results
+```
+
+
+Predicting
+```{r}
+library(Metrics)
+y_true <- test$TOTAL_ACCIDENTS
+
+
+y_pred_base <- round(predict(m7_base, type = "response", newdata = test))
+y_pred_small <- round(predict(m7_small, type = "response", newdata = test))
+y_pred_large <- round(predict(m7_large, type = "response", newdata = test))
+
+
+
+rmse_base <- sqrt(mean((y_true-y_pred_base)^2))
+rmse_small <- sqrt(mean((y_true-y_pred_small)^2))
+rmse_large <- sqrt(mean((y_true-y_pred_large)^2))
+
+
+x <- list(y_pred_base, y_pred_small, y_pred_large)
+
+df <- data.frame(y_true)
+df <- data.frame(x)
+write.csv(df, "df_test_true.csv")
+
+```
+
+```{r}
+y_pred_train <- predict(m7, type = "response")
+y_true_train <- train$TOTAL_ACCIDENTS
+
+rmse_train <- sqrt(mean((y_true_train - y_pred_train)^2))
+rmse_train
+```
+
+
+```{r}
+summary(cv_model)
+rmse <- sqrt(mean((y_true-y_pred)^2))
+```
+
+
+```{r}
+choose(9,2) * 0.09^3*0.91^7
+(3*0.91)/0.0081
+```
+
+Testing for overdispersion
+```{r}
+x1 <- rnbinom(n=1000, size=1.2,  mu=20)
+x1 <- as.data.frame(x1)
+
+ggplot(x1, aes(x=x1), x1) + geom_bar(colour="black", fill= "lightskyblue1") + ylab("The count") + theme_minimal()
+```
+
+
+Linear regression with bootstrapping
+```{r}
+lin_model <- lm(TOTAL_ACCIDENTS ~ ., data = base_train)
+lin_pred <- predict(lin_model, type = "response", newdata = validation)
+
+rmse(y_true, lin_pred)
+
+summary(lin_model)
+```
+
+with bootstrapping
+```{r}
+boot_func <- function(data, idx) {
+  coef(
+    glm.nb(TOTAL_ACCIDENTS ~ ., data = data, subset = idx)
+  )
+}
+
+boot_coefs <- boot(base_train, boot_func, 1000)
+
+vec <- bootstrap_rmse(lin_model, validation, 500)
+
+mean(vec$rmse_bs)
+vec$rmse_mod
+```
+
+```{r}
+1 - m7_base$deviance/m7_base$null.deviance
+```
+
